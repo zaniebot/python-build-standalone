@@ -88,17 +88,38 @@ Similar to how other dependencies (ncurses, openssl, etc.) are handled:
 
 Add a fallback that defines `struct sockaddr_nl` inline when the header is missing. However, this is fragile and not recommended.
 
-## Verification Steps
+## Verification
 
-To verify this is the issue, check the pyconfig.h in a musl build:
+Comparing `pyconfig.h` between glibc and musl builds confirms the issue:
 
-```bash
-# Should return nothing if the issue is present
-grep "HAVE_LINUX_NETLINK_H" /path/to/musl/python/include/python3.X/pyconfig.h
-grep "HAVE_ASM_TYPES_H" /path/to/musl/python/include/python3.X/pyconfig.h
+**glibc build** (`cpython-3.13.7-linux-x86_64-gnu`):
+```c
+#define HAVE_ASM_TYPES_H 1
+#define HAVE_LINUX_NETLINK_H 1
+/* #undef HAVE_NETLINK_NETLINK_H */
 ```
 
-If both are missing, AF_NETLINK support is disabled.
+**musl build** (`cpython-3.13.7-linux-x86_64-musl`):
+```c
+/* #undef HAVE_ASM_TYPES_H */
+/* #undef HAVE_LINUX_NETLINK_H */
+/* #undef HAVE_NETLINK_NETLINK_H */
+```
+
+The musl build is missing both `HAVE_ASM_TYPES_H` and `HAVE_LINUX_NETLINK_H`, confirming that Linux kernel headers are not available during the configure phase.
+
+### To reproduce:
+```bash
+# Check glibc build (has the defines)
+uvx --python cpython-3.13-linux-x86_64-gnu python -c "
+import sysconfig, os
+pyconfig = os.path.join(sysconfig.get_path('include'), 'pyconfig.h')
+print([l for l in open(pyconfig) if 'NETLINK' in l or 'ASM_TYPES' in l])
+"
+
+# Check musl build (missing the defines)
+grep -E 'NETLINK|ASM_TYPES' ~/.local/share/uv/python/cpython-*-musl/include/python*/pyconfig.h
+```
 
 ## References
 
