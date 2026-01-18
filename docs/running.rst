@@ -197,6 +197,7 @@ If you want to extract the distribution with Python, use the
 
 .. code-block:: python
 
+   import sys
    import tarfile
    import zstandard
 
@@ -204,7 +205,12 @@ If you want to extract the distribution with Python, use the
        dctx = zstandard.ZstdDecompressor()
        with dctx.stream_reader(ifh) as reader:
            with tarfile.open(mode="r|", fileobj=reader) as tf:
-               tf.extractall("path/to/output/directory")
+               # Python 3.14+ changed the default tarfile filter to reject
+               # absolute symlinks. Use filter="fully_trusted" to extract.
+               if sys.version_info >= (3, 12):
+                   tf.extractall("path/to/output/directory", filter="fully_trusted")
+               else:
+                   tf.extractall("path/to/output/directory")
 
 Runtime Requirements
 ====================

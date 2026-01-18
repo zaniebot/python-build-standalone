@@ -29,7 +29,13 @@ def main(args):
             dctx = zstandard.ZstdDecompressor()
             with dctx.stream_reader(fh) as reader:
                 with tarfile.open(mode="r|", fileobj=reader) as tf:
-                    tf.extractall(td)
+                    # Python 3.14+ changed the default tarfile filter from
+                    # 'fully_trusted' to 'data', which rejects absolute symlinks.
+                    # The filter parameter was added in Python 3.12.
+                    if sys.version_info >= (3, 12):
+                        tf.extractall(td, filter="fully_trusted")
+                    else:
+                        tf.extractall(td)
 
         root = td / "python"
 

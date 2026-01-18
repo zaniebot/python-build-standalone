@@ -391,7 +391,14 @@ def create_tar_from_directory(fh, base_path: pathlib.Path, path_prefix=None):
 
 def extract_tar_to_directory(source: pathlib.Path, dest: pathlib.Path):
     with tarfile.open(source, "r") as tf:
-        tf.extractall(dest)
+        # Python 3.14+ changed the default tarfile filter from 'fully_trusted' to
+        # 'data', which rejects absolute symlinks. Some dependencies (e.g., bzip2)
+        # contain absolute symlinks, so we need to use the 'fully_trusted' filter.
+        # The filter parameter was added in Python 3.12.
+        if sys.version_info >= (3, 12):
+            tf.extractall(dest, filter="fully_trusted")
+        else:
+            tf.extractall(dest)
 
 
 def extract_zip_to_directory(source: pathlib.Path, dest: pathlib.Path):
