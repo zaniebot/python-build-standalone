@@ -66,6 +66,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
+          version: "0.5.29"
           enable-cache: false
 
       - name: Get pull request labels
@@ -133,6 +134,7 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
+          version: "0.5.29"
           enable-cache: false
 
       - name: Download pythonbuild
